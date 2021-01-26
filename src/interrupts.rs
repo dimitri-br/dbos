@@ -4,7 +4,7 @@
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 use x86_64::structures::idt::PageFaultErrorCode;
 use crate::hlt_loop;
-use crate::{println, print};
+use crate::{println, print, del_col};
 use crate::gdt; // Get the double_fault stack index
 use lazy_static::lazy_static;
 use pic8259_simple::ChainedPics;
@@ -173,16 +173,27 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: &mut Interrup
     let mut keyboard = KEYBOARD.lock(); // Lock a mutable keyboard ref
     let mut port = Port::new(0x60); // Read IO port 0x60, which is the PS/2 controller port
     let scancode: u8 = unsafe { port.read() }; // The byte we read from the port is the scancode
-    // Decode our scancode and output the key
-    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
-        if let Some(key) = keyboard.process_keyevent(key_event) {
-            match key {
-                DecodedKey::Unicode(character) => print!("{}", character),
-                DecodedKey::RawKey(key) => print!("{:?}", key),
+    
+    // Custom handling
+    let should_render_text = match scancode{
+        0xE => {del_col!(); false}
+        _ => {true}
+    };
+
+    // Only render character to screen if we're not using a function key, such as esc, del, backspace etc
+    if should_render_text{
+        // Decode our scancode and output the key
+        if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
+            if let Some(key) = keyboard.process_keyevent(key_event) {
+                //key.
+                match key {
+                    DecodedKey::Unicode(character) => print!("{}", character),
+                    DecodedKey::RawKey(key) => print!("{:?}", key),
+                }
             }
         }
     }
-
+    
 
     // Let the PIC know that we've finished with the interrupt
     unsafe {

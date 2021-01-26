@@ -66,7 +66,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
 
     // write the string `New!` to the screen through the new mapping
-    let page_ptr: *mut u64 = *mut 0xdeadbeaf000;//page.start_address().as_mut_ptr();
+    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
     unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e)};
 
     // as before

@@ -159,6 +159,46 @@ impl Writer {
         self.column_position = 0;
     }
 
+    /// delete a line. It works by iterating through every single row and column, moving
+    /// 
+    /// them up down row. This moves everything down by one, before resetting the column position. 
+    fn del_line(&mut self) {
+        let character = ScreenChar{ ascii_character: b' ', color_code: self.color_code };
+        let mut copy_buffer = [[character; BUFFER_WIDTH]; BUFFER_HEIGHT];
+        for row in 0..BUFFER_HEIGHT-1 {
+            for col in 0..BUFFER_WIDTH {
+                let character = self.buffer.chars[row][col].read();
+                copy_buffer[row+1][col] = character;
+            }
+        }
+
+        for row in 1..BUFFER_HEIGHT {
+            for col in 0..BUFFER_WIDTH {
+                let character = copy_buffer[row][col];
+                self.buffer.chars[row][col].write(character);
+            }
+        }
+
+        self.clear_row(1);
+        self.column_position = self.get_char_pos(BUFFER_HEIGHT - 1) + 2;
+    }
+
+
+    /// Get the last character position on a row to wrap the current
+    /// column position to the last character, esp when going back a line
+    fn get_char_pos(&self, row: usize) -> usize{
+        let mut last_char_pos = 0;
+        let mut column = 0;
+        for col in self.buffer.chars[row].iter(){
+            if col.read().ascii_character != b' '{
+                last_char_pos = column;
+            }
+            column += 1;
+        }
+
+        last_char_pos
+    }
+
     /// Clear the new row with space (`' '`) characters
     /// 
     /// As it looks cleaner. Also used by [clear_screen](../macro.clear_screen.html)
@@ -190,13 +230,32 @@ impl Writer {
         }
     }
 
-    /// This function read a row, so you can read the contents of a row (text)
+    /// This function reads a row, so you can read the contents of a row (text)
     /// 
     /// Call with the [readln](../macro.readln.html) macro.
     pub fn clear_screen(&mut self){
         for row in 0..BUFFER_HEIGHT{
             self.clear_row(row);
         }
+    }
+
+    /// This function deletes the last column, to emulate a backspace
+    /// 
+    /// Call with the [del_col](../macro.del_col.html) macro.
+    pub fn backspace(&mut self){
+        if self.column_position <= 0 {
+            self.del_line();
+        }
+
+        let row = BUFFER_HEIGHT - 1;
+        let col = self.column_position - 1;
+
+        let color_code = self.color_code;
+        self.buffer.chars[row][col].write(ScreenChar {
+            ascii_character: b' ',
+            color_code,
+        });
+        self.column_position -= 1;
     }
 
     /// This function clears each row individually, so you can wipe the contents of the screen
@@ -245,6 +304,12 @@ macro_rules! clear_screen {
     () => ($crate::vga_buffer::_clear_screen());
 }
 
+/// Helpful macro to simulate a backspace
+#[macro_export]
+macro_rules! del_col {
+    () => ($crate::vga_buffer::_backspace());
+}
+
 /// Create a _print function that takes the input from the macros, and then takes a lock of
 /// our writer, then outputting the contents onto the screen.
 #[doc(hidden)]
@@ -277,6 +342,16 @@ pub fn _clear_screen() {
 
         interrupts::without_interrupts(|| {     // Make sure that no interrupt can run while the writer is locked
         WRITER_GLOBAL.lock().clear_screen();
+    });
+}
+
+/// Deletes the last character in the column - useful for backspace
+#[doc(hidden)]
+pub fn _backspace() {
+    use x86_64::instructions::interrupts;
+
+        interrupts::without_interrupts(|| {     // Make sure that no interrupt can run while the writer is locked
+        WRITER_GLOBAL.lock().backspace();
     });
 }
 
