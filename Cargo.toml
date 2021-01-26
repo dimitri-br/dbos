@@ -1,0 +1,35 @@
+[package]
+name = "dbos"
+version = "0.1.0"
+authors = ["Dimitri Bobkov <bobkov.dimitri@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bootloader = { version = "0.9.3", features = ["map_physical_memory"]} # Basic BIOS bootloader
+volatile = "0.2.6" # Makes sure our buffer writes are not optimized out
+spin = "0.7" # Alternative to mutex (So we can aquire locks and remain safe on global statics)
+x86_64 = "0.12.1" # x86_64 functions and instructions crate
+uart_16550 = "0.2.0" # Allows us to write to the serial port
+pic8259_simple = "0.2.0" # PIC support, which allows us to handle things like keyboard input, timers etc.
+pc-keyboard = "0.5.0" # Helps translate scancodes -> ascii lettering
+
+# Lazy static is a better way to create static variables. We need the features as we are not using std_lib
+[dependencies.lazy_static]
+version = "1.0"
+features = ["spin_no_std"]
+
+# Specify test arguments for `cargo test`. We specify iobase and iosize which
+# let us send messages to QEMU through IO ports.
+[package.metadata.bootimage]
+test-args = [
+    "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "stdio",
+    "-display", "none"
+]
+test-success-exit-code = 33   # Exit code 33 is the success code!
+
+# Test stuff
+[[test]]
+name = "stack_overflow"
+harness = false

@@ -1,0 +1,24 @@
+# Recompile the Core library (Required for no_std programs) on demand as our
+# custom build target does not have a prebuilt core library
+# Compiler_builtins is a dependency of Core
+
+# As it is unstable, it requires nightly to be enabled.
+
+# Make sure to install the rust source <rustup component add rust-src>
+[unstable]
+# What to rebuild
+build-std = ["core", "compiler_builtins"]
+# Features to rebuild. We need this as functions like memcpy and memset are
+# C functions, which are unavaliable to us in the kernel. We have to enable them 
+# as they're disabled by default. This is much safer than writing our own. Used for
+# structs and other memory tasks (Most things in programming tbh)
+build-std-features = ["compiler-builtins-mem"]
+
+
+# Set our build target to our custom one defined in the JSON file.
+[build]
+target = "x86_64-dbos.json"
+
+# Auto run our compiled OS when we run with cargo.
+[target.'cfg(target_os = "none")']
+runner = "bootimage runner"
