@@ -1,3 +1,12 @@
+pub mod bump; // Bump allocator - the most simple.  Has a counter that only goes up or down. When it is at 0, there are no allocations
+pub mod linked_list; // Linked list allocator, which keeps track of free spaces
+pub mod fixed_size_block; // Instead of the dynamic sizing of linked list, you have set sizes (Hence fixed_size_block)
+
+use bump::BumpAllocator; // Fast, simple, but not the best as you can't really reuse allocations.
+use linked_list::LinkedListAllocator; // Slower, but better as you can assign free memory regions and are not limited by segmentation
+use fixed_size_block::FixedSizeBlockAllocator; // Faster than linked lists, but wastes memory.  Better for kernels, as faster performance
+
+
 use alloc::alloc::{GlobalAlloc, Layout}; // We need these to create our global allocator, as we aren't using std_lib
 use core::ptr::null_mut; // Null pointer
 use x86_64::{
@@ -6,8 +15,6 @@ use x86_64::{
     },
     VirtAddr,
 }; // Used for memory allocation
-use linked_list_allocator::LockedHeap; // Allocator. Called lockedheap as it is behind a spinlock (like mutex). Shouldn't allocate in interrupts
-                                       // as it will cause a deadlock.
 
 
 /// Define the memory location where the heap starts
@@ -17,8 +24,12 @@ pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
 
 
 /// We define our allocator here, which needs to inherit GlobalAlloc type.
-#[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+#[global_allocator] // Select an allocator from the list below (See import notes for specific use cases)
+//static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());
+//static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new());
+static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(FixedSizeBlockAllocator::new());
+
+
 
 /// We create a zero-sized type as we don't need any fields.
 pub struct Dummy;
@@ -74,4 +85,31 @@ pub fn init_heap(
     }
 
     Ok(())
+}
+
+/// Align the given address `addr` upwards to alignment `align`.
+///
+/// Requires that `align` is a power of two.
+/// 
+/// [See more here](https://os.phil-opp.com/allocator-designs/#introduction)
+fn align_up(addr: usize, align: usize) -> usize {
+    (addr + align - 1) & !(align - 1)
+}
+
+
+/// A wrapper around spin::Mutex to permit trait implementations.
+pub struct Locked<A> {
+    inner: spin::Mutex<A>,
+}
+
+impl<A> Locked<A> {
+    pub const fn new(inner: A) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
+    }
+
+    pub fn lock(&self) -> spin::MutexGuard<A> {
+        self.inner.lock()
+    }
 }

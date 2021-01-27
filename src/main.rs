@@ -35,8 +35,6 @@ fn main() {
 // Main function
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     clear_screen!(); // Clear the display
-
-    println!("Hello World{}", "!");
     dbos::init();
 
     use dbos::{memory, allocator};

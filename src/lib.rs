@@ -3,6 +3,8 @@
 #![feature(abi_x86_interrupt)] // Enable interrupts and exception callbacks
 #![feature(custom_test_frameworks)] // Custom test framework as the standard one needs std
 #![feature(alloc_error_handler)] // We need to enable an alloc_error_handler as it is an unstable feature
+#![feature(const_mut_refs)] // Mutable consts
+#![feature(const_in_array_repeat_expressions)] // None type doesn't support COPY, so we use this
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
@@ -25,10 +27,17 @@ use bootloader::{entry_point, BootInfo};
 /// Initalize our kernel. This will store interrupt initalizing, memory and paging stuff
 /// and much, much more.
 pub fn init() {
+    println!("[INIT] Booting kernel...");
     interrupts::init_idt(); // Load the IDT to the CPU.
+    println!("[LOG] Initialized the IDT - exceptions now enabled");
     gdt::init(); // init the GDT (Load the TSS and setup the GDT)
+    println!("[LOG] Initialized the GDT - running kernel user privilage\n[LOG] TSS loaded successfully");
     unsafe { interrupts::PICS.lock().initialize() }; // Enable interrupts from the PIC
+    println!("[LOG] PIC initialized");
     x86_64::instructions::interrupts::enable(); // Runs the STI command which enables CPU interrupts (set interrupts)
+    println!("[LOG] PIC interrupts initialized");
+
+    println!("[END] End of initialization\n\n");
 }
 
 /// # QemuExitCode

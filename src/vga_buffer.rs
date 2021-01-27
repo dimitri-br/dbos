@@ -248,14 +248,16 @@ impl Writer {
         }
 
         let row = BUFFER_HEIGHT - 1;
-        let col = self.column_position - 1;
-
+        let mut col = self.column_position - 1;
+        if col > BUFFER_WIDTH -1{
+            col = BUFFER_WIDTH - 1;
+        }
         let color_code = self.color_code;
         self.buffer.chars[row][col].write(ScreenChar {
             ascii_character: b' ',
             color_code,
         });
-        self.column_position -= 1;
+        self.column_position = col;
     }
 
     /// This function clears each row individually, so you can wipe the contents of the screen
