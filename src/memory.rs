@@ -55,6 +55,7 @@ pub fn create_example_mapping(
 }
 
 /// A FrameAllocator that always returns `None`.
+/// Just kinda chilling here
 pub struct EmptyFrameAllocator;
 
 unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
@@ -63,9 +64,12 @@ unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
     }
 }
 
+/// Memory Map struct that contains mapping info from the BIOS
 use bootloader::bootinfo::MemoryMap;
 
 /// A FrameAllocator that returns usable frames from the bootloader's memory map.
+/// We use this to allocate frames (Locations in physical memory) so we can allocate
+/// a frame to a page (the data to store in the virtual memory) to the Page table.
 pub struct BootInfoFrameAllocator {
     memory_map: &'static MemoryMap,
     next: usize,
@@ -85,6 +89,7 @@ impl BootInfoFrameAllocator {
     }
 }
 
+/// We use this struct to check the frame is a usable frame, and not reserved for things like code and the bootloader
 use bootloader::bootinfo::MemoryRegionType;
 
 impl BootInfoFrameAllocator {
@@ -104,8 +109,8 @@ impl BootInfoFrameAllocator {
     }
 }
 
-// Impl the frame allocator for our bootinfoframeallocator, which stores all the memory
-// locations provided by the BIOS/UEFI
+/// Impl the frame allocator for our bootinfoframeallocator, which stores all the memory
+/// locations provided by the BIOS/UEFI
 unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
     fn allocate_frame(&mut self) -> Option<PhysFrame> {
         let frame = self.usable_frames().nth(self.next);

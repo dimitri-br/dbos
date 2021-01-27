@@ -14,6 +14,7 @@ x86_64 = "0.12.1" # x86_64 functions and instructions crate
 uart_16550 = "0.2.0" # Allows us to write to the serial port
 pic8259_simple = "0.2.0" # PIC support, which allows us to handle things like keyboard input, timers etc.
 pc-keyboard = "0.5.0" # Helps translate scancodes -> ascii lettering
+linked_list_allocator = "0.8.0" # Allocator that will setup no_std allocation for us
 
 # Lazy static is a better way to create static variables. We need the features as we are not using std_lib
 [dependencies.lazy_static]

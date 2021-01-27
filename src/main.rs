@@ -5,6 +5,12 @@
 #![test_runner(dbos::test_runner)] // The test runner is in our lib
 #![reexport_test_harness_main = "test_main"]
 
+/// Use the alloc standard crate
+extern crate alloc;
+
+/// Boxes!
+use alloc::boxed::Box;
+
 
 /// Use our library to get the various macros we want
 use dbos::{println, clear_screen};
@@ -17,25 +23,6 @@ use bootloader::{BootInfo, entry_point}; // Boot info from our bootloader, for t
 
 // Define the entry point
 entry_point!(kernel_main);
-
-/// # Panic
-/// 
-/// This function is called on panic. The function should never return, as annotated by the
-/// [!] return value (Divergent return).
-#[cfg(not(test))] // This panic handler runs when not in test mode
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
-    dbos::hlt_loop();
-}
-
-/// Same as panic handler (not test), except it prints to serial rather than VGA.
-#[cfg(test)]
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    dbos::test_panic_handler(info);
-}
-
 
 /// # Main
 /// 
@@ -52,23 +39,33 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("Hello World{}", "!");
     dbos::init();
 
-    use dbos::memory;
+    use dbos::{memory, allocator};
     use x86_64::{structures::paging::Page, VirtAddr};
     
+    // Get the offset from bootinfo
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    // Create the mapper using the offset
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    // Create a frame allocator using our memory map from bootinfo
     let mut frame_allocator = unsafe {
         memory::BootInfoFrameAllocator::init(&boot_info.memory_map)
     };
+    // Initialize our allocator heap using the mapper and allocator
+    allocator::init_heap(&mut mapper, &mut frame_allocator)
+    .expect("heap initialization failed");
 
-    // map an unused page
+    // We've finished initializing
+
+    /*// map an unused page
     let page = Page::containing_address(VirtAddr::new(0xdeadbeaf000));
     memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
-
     // write the string `New!` to the screen through the new mapping
     let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
-    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e)};
+    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e)};*/
 
+    let x = Box::new(41);
+
+    println!("Boxed value: {:?} at {:p}", x, x);
     // as before
     #[cfg(test)]
     test_main();
