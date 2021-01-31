@@ -69,7 +69,7 @@ fn main(boot_info: &'static BootInfo) {
 // Main function
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     clear_screen!(); // Clear the display
-    dbos::init();
+    dbos::init(); // Initialize the kernel through setting up page tables and stack tables
 
     // Setup our allocation info. We initialize our memory pages and respective tables.
 
