@@ -5,9 +5,11 @@
 #![feature(alloc_error_handler)] // We need to enable an alloc_error_handler as it is an unstable feature
 #![feature(const_mut_refs)] // Mutable consts
 #![feature(const_in_array_repeat_expressions)] // None type doesn't support COPY, so we use this
+#![feature(vec_into_raw_parts)] // Lets us split up alloc types to check debug info
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+#[macro_use]
 extern crate alloc; // Dynamic allocation (heap memory). Support for things like Box, Rc, Vec and more collection types.
 
 pub mod vga_buffer; // This module handles writing text to the VGA buffer
@@ -16,6 +18,8 @@ pub mod interrupts; // This module handles our interrupts and exceptions
 pub mod gdt; // Controls kernel/user mode and the various stacks
 pub mod memory; // Memory allocation and paging
 pub mod allocator; // Dynamic allocation functions, for heap support
+pub mod cpu_specs; // Outputs CPU specs and details CPU support
+
 
 use core::panic::PanicInfo;
 
@@ -37,6 +41,7 @@ pub fn init() {
     x86_64::instructions::interrupts::enable(); // Runs the STI command which enables CPU interrupts (set interrupts)
     println!("[LOG] PIC interrupts initialized");
 
+    
     println!("[END] End of initialization\n\n");
 }
 
@@ -127,23 +132,12 @@ fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
 }
 
 
-/// # Panic
-/// 
-/// This function is called on panic. The function should never return, as annotated by the
-/// [!] return value (Divergent return).
-#[cfg(not(test))] // This panic handler runs when not in test mode
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
-    hlt_loop();
-}
-
-/// Same as panic handler (not test), except it prints to serial rather than VGA.
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    test_panic_handler(info);
+    test_panic_handler(info)
 }
+
 
 /// This function handles allocation errors. We panic, as there is nothing we can do.
 #[alloc_error_handler]

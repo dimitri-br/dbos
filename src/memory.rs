@@ -118,3 +118,27 @@ unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
         frame
     }
 }
+
+pub fn get_physical_memory_capacity(memory_map: &'static MemoryMap) -> (usize, usize){
+    let regions = memory_map.iter();
+
+    let capacity_regions = regions.as_ref().iter()
+        .filter(|r| r.region_type == MemoryRegionType::Usable || r.region_type == MemoryRegionType::Kernel || r.region_type == MemoryRegionType::InUse);
+    let mut capacity = 0;
+    for _ in capacity_regions{
+        capacity += 1024; // Each frame is 1kb
+    }
+
+
+    let usable_regions = regions
+        .filter(|r| r.region_type == MemoryRegionType::Usable);
+
+    let mut free_count = 0;
+    for _ in usable_regions{
+        free_count += 1024; // Each frame is 1kb
+    }
+
+
+
+    (free_count, capacity)
+}

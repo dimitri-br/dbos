@@ -70,6 +70,11 @@ fn many_boxes() {
     }
 }
 
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    dbos::test_panic_handler(info)
+}
+
 // Will fail with bump allocation
 #[test_case]
 fn many_boxes_long_lived() {
