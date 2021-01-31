@@ -19,7 +19,7 @@ pub mod gdt; // Controls kernel/user mode and the various stacks
 pub mod memory; // Memory allocation and paging
 pub mod allocator; // Dynamic allocation functions, for heap support
 pub mod cpu_specs; // Outputs CPU specs and details CPU support
-
+pub mod driver; // All kernel level drivers (Not user)
 
 use core::panic::PanicInfo;
 

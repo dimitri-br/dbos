@@ -160,7 +160,7 @@ extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: &mut InterruptSt
 // This gets called on key press and key release
 extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: &mut InterruptStackFrame)
 {
-    use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1}; // Keyboard structs
+    /*use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1}; // Keyboard structs
     use spin::Mutex; // Protect it with a mutex
     use x86_64::instructions::port::Port;
 
@@ -192,7 +192,13 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: &mut Interrup
                 }
             }
         }
-    }
+    }*/
+
+    use crate::driver::DRIVER_HANDLER;
+
+    // Lock our mutex to our driver handler (So we can use it mutably), then get the keyboard
+    // driver and scan a keypress.
+    DRIVER_HANDLER.lock().keyboard_driver.print_key();
     
 
     // Let the PIC know that we've finished with the interrupt
