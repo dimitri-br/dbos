@@ -6,6 +6,7 @@
 #![feature(const_mut_refs)] // Mutable consts
 #![feature(const_in_array_repeat_expressions)] // None type doesn't support COPY, so we use this
 #![feature(vec_into_raw_parts)] // Lets us split up alloc types to check debug info
+#![feature(wake_trait)] // Lets us use the Wake trait, a safe alternative to RawWaker
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
@@ -20,6 +21,7 @@ pub mod memory; // Memory allocation and paging
 pub mod allocator; // Dynamic allocation functions, for heap support
 pub mod cpu_specs; // Outputs CPU specs and details CPU support
 pub mod driver; // All kernel level drivers (Not user)
+pub mod task; // Cooperative Multitasking - basically async
 
 use core::panic::PanicInfo;
 
@@ -33,16 +35,11 @@ use bootloader::{entry_point, BootInfo};
 pub fn init() {
     println!("[INIT] Booting kernel...");
     interrupts::init_idt(); // Load the IDT to the CPU.
-    println!("[LOG] Initialized the IDT - exceptions now enabled");
     gdt::init(); // init the GDT (Load the TSS and setup the GDT)
-    println!("[LOG] Initialized the GDT - running kernel user privilage\n[LOG] TSS loaded successfully");
     unsafe { interrupts::PICS.lock().initialize() }; // Enable interrupts from the PIC
     println!("[LOG] PIC initialized");
     x86_64::instructions::interrupts::enable(); // Runs the STI command which enables CPU interrupts (set interrupts)
-    println!("[LOG] PIC interrupts initialized");
-
-    
-    println!("[END] End of initialization\n\n");
+    println!("[LOG] Interrupts enabled.");
 }
 
 /// # QemuExitCode

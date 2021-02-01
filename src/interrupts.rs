@@ -106,6 +106,7 @@ lazy_static! {
 pub fn init_idt() {
     // Load our IDT to memory
     IDT.load();
+    println!("[LOG] IDT loaded successfully");
 }
 
 /* Exceptions */
@@ -160,45 +161,13 @@ extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: &mut InterruptSt
 // This gets called on key press and key release
 extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: &mut InterruptStackFrame)
 {
-    /*use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1}; // Keyboard structs
-    use spin::Mutex; // Protect it with a mutex
-    use x86_64::instructions::port::Port;
-
-    lazy_static! {
-        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> =
-            Mutex::new(Keyboard::new(layouts::Us104Key, ScancodeSet1,
-                HandleControl::Ignore)
-            );
-    }
-    let mut keyboard = KEYBOARD.lock(); // Lock a mutable keyboard ref
-    let mut port = Port::new(0x60); // Read IO port 0x60, which is the PS/2 controller port
-    let scancode: u8 = unsafe { port.read() }; // The byte we read from the port is the scancode
-    
-    // Custom handling
-    let should_render_text = match scancode{
-        0xE => {del_col!(); false}
-        _ => {true}
-    };
-
-    // Only render character to screen if we're not using a function key, such as esc, del, backspace etc
-    if should_render_text{
-        // Decode our scancode and output the key
-        if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
-            if let Some(key) = keyboard.process_keyevent(key_event) {
-                //key.
-                match key {
-                    DecodedKey::Unicode(character) => print!("{}", character),
-                    DecodedKey::RawKey(key) => print!("{:?}", key),
-                }
-            }
-        }
-    }*/
-
     use crate::driver::DRIVER_HANDLER;
 
-    // Lock our mutex to our driver handler (So we can use it mutably), then get the keyboard
-    // driver and scan a keypress.
-    DRIVER_HANDLER.lock().keyboard_driver.print_key();
+    {
+        // Lock our mutex to our driver handler (So we can use it mutably), then get the keyboard
+        // driver and scan a keypress.
+        DRIVER_HANDLER.lock().keyboard_driver.read_scancode();
+    } // drop our lock
     
 
     // Let the PIC know that we've finished with the interrupt
@@ -219,3 +188,4 @@ fn test_breakpoint_exception() {
     // invoke a breakpoint exception
     x86_64::instructions::interrupts::int3();
 }
+

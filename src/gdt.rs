@@ -3,7 +3,12 @@ use x86_64::structures::tss::TaskStateSegment;
 use x86_64::structures::gdt::SegmentSelector;
 use x86_64::structures::gdt::{GlobalDescriptorTable, Descriptor};
 use lazy_static::lazy_static;
+use crate::{println};
 
+
+/// Define a stack to use as the double fault stack (any stack works)
+/// 
+/// This stack will be used on a double fault
 pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
 
 
@@ -63,10 +68,13 @@ pub fn init() {
 
     // Load our GDT
     GDT.0.load();
+    println!("[LOG] GDT loaded successfully");
     unsafe {
         // Set our code selector (kernel/user mode)
         set_cs(GDT.1.code_selector);
+        println!("[LOG] Set GDT code selector");
         // Set our tss selector
         load_tss(GDT.1.tss_selector);
+        println!("[LOG] Set GDT tss selector");
     }
 }

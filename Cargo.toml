@@ -17,10 +17,27 @@ pc-keyboard = "0.5.0" # Helps translate scancodes -> ascii lettering
 linked_list_allocator = "0.8.0" # Allocator that will setup no_std allocation for us
 raw-cpuid = "9.0.0" # Get x86 CPU info
 
+
 # Lazy static is a better way to create static variables. We need the features as we are not using std_lib
 [dependencies.lazy_static]
 version = "1.0"
 features = ["spin_no_std"]
+
+# Async queue support
+[dependencies.crossbeam-queue]
+version = "0.2.1"
+default-features = false
+features = ["alloc"]
+
+# Safe runtime static initializion
+[dependencies.conquer-once]
+version = "0.2.0"
+default-features = false
+
+[dependencies.futures-util]
+version = "0.3.4"
+default-features = false
+features = ["alloc"]
 
 # Specify test arguments for `cargo test`. We specify iobase and iosize which
 # let us send messages to QEMU through IO ports.

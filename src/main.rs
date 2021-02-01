@@ -21,6 +21,9 @@ use core::ops::Add;
 /// Use our library to get the various macros we want
 use dbos::{println, clear_screen};
 use dbos::{memory, allocator, cpu_specs}; // Modules that control memory, the allocator and output CPU info
+use dbos::task::{Task, simple_executor::Executor}; // Use our better Executor to run our async tasks
+use dbos::driver::keyboard; // Get access to our keyboard module so we can add the print_keypresses async function to our task queue
+
 use x86_64::{structures::paging::Page, VirtAddr}; // We use this to get & create pages, and assign virt addr
 
 /// Core libary panic handling. This struct contains panic info, like where the
@@ -50,7 +53,10 @@ fn main(boot_info: &'static BootInfo) {
     //let memory_capacity = memory::get_physical_memory_capacity(&boot_info.memory_map);
     //println!("Free physical memory: {:?}/{:?} MiB\n", memory_capacity.0, memory_capacity.1);
 
-
+    let mut executor = Executor::new(); // Create a new Executor
+    executor.spawn(Task::new(example_task())); // Add a new task to the simple executor
+    executor.spawn(Task::new(keyboard::print_keypresses())); // Add our "print_keypresses" task to our executor
+    executor.run(); // Run all tasks
 
     let x = Box::new(41);
     println!("Boxed value: {:?} at (ptr: {:p} -> memory usage: {} bytes)", x, x, core::mem::size_of_val(&x));
@@ -108,4 +114,15 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     main(boot_info);
 
     dbos::hlt_loop();
+}
+
+/* Test async */
+
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_task() {
+    let number = async_number().await;
+    println!("async number: {}", number);
 }
