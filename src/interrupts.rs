@@ -4,7 +4,7 @@
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 use x86_64::structures::idt::PageFaultErrorCode;
 use crate::hlt_loop;
-use crate::{println, print, del_col};
+use crate::{println, print, del_col, serial_println};
 use crate::gdt; // Get the double_fault stack index
 use lazy_static::lazy_static;
 use pic8259_simple::ChainedPics;
@@ -106,7 +106,7 @@ lazy_static! {
 pub fn init_idt() {
     // Load our IDT to memory
     IDT.load();
-    println!("[LOG] IDT loaded successfully");
+    serial_println!("[LOG] IDT loaded successfully");
 }
 
 /* Exceptions */

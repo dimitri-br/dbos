@@ -33,13 +33,13 @@ use bootloader::{entry_point, BootInfo};
 /// Initalize our kernel. This will store interrupt initalizing, memory and paging stuff
 /// and much, much more.
 pub fn init() {
-    println!("[INIT] Booting kernel...");
+    serial_println!("[INIT] Booting kernel...");
     interrupts::init_idt(); // Load the IDT to the CPU.
     gdt::init(); // init the GDT (Load the TSS and setup the GDT)
     unsafe { interrupts::PICS.lock().initialize() }; // Enable interrupts from the PIC
-    println!("[LOG] PIC initialized");
+    serial_println!("[LOG] PIC initialized");
     x86_64::instructions::interrupts::enable(); // Runs the STI command which enables CPU interrupts (set interrupts)
-    println!("[LOG] Interrupts enabled.");
+    serial_println!("[LOG] Interrupts enabled.");
 }
 
 /// # QemuExitCode

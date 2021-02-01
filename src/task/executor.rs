@@ -4,6 +4,7 @@ use alloc::{collections::BTreeMap, sync::Arc};
 use core::task::Waker;
 use core::task::{Context, Poll};
 use crossbeam_queue::ArrayQueue;
+use crate::serial_println;
 
 /// # Executor
 /// 
@@ -24,6 +25,7 @@ pub struct Executor {
 impl Executor {
     /// Initialize a new Executor
     pub fn new() -> Self {
+        serial_println!("Initialized task executor");
         Executor {
             tasks: BTreeMap::new(),
             task_queue: Arc::new(ArrayQueue::new(100)),

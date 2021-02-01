@@ -4,6 +4,7 @@ use x86_64::{
     structures::paging::{PageTable, Page, PhysFrame, Mapper, Size4KiB, FrameAllocator}
 };
 use x86_64::structures::paging::OffsetPageTable;
+use crate::serial_println;
 
 /// Initialize a new OffsetPageTable.
 ///
@@ -13,6 +14,7 @@ use x86_64::structures::paging::OffsetPageTable;
 /// to avoid aliasing `&mut` references (which is undefined behavior).
 pub unsafe fn init(physical_memory_offset: VirtAddr) -> OffsetPageTable<'static> {
     let level_4_table = active_level_4_table(physical_memory_offset);
+    serial_println!("Initialized page table from level 4 offset");
     OffsetPageTable::new(level_4_table, physical_memory_offset)
 }
 

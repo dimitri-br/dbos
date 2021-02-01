@@ -3,7 +3,7 @@ use x86_64::structures::tss::TaskStateSegment;
 use x86_64::structures::gdt::SegmentSelector;
 use x86_64::structures::gdt::{GlobalDescriptorTable, Descriptor};
 use lazy_static::lazy_static;
-use crate::{println};
+use crate::{serial_println};
 
 
 /// Define a stack to use as the double fault stack (any stack works)
@@ -68,13 +68,13 @@ pub fn init() {
 
     // Load our GDT
     GDT.0.load();
-    println!("[LOG] GDT loaded successfully");
+    serial_println!("[LOG] GDT loaded successfully");
     unsafe {
         // Set our code selector (kernel/user mode)
         set_cs(GDT.1.code_selector);
-        println!("[LOG] Set GDT code selector");
+        serial_println!("[LOG] Set GDT code selector");
         // Set our tss selector
         load_tss(GDT.1.tss_selector);
-        println!("[LOG] Set GDT tss selector");
+        serial_println!("[LOG] Set GDT tss selector");
     }
 }

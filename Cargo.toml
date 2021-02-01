@@ -39,6 +39,10 @@ version = "0.3.4"
 default-features = false
 features = ["alloc"]
 
+[dependencies.tinypci]
+path = "D:/tinypci"
+default-features = false
+
 # Specify test arguments for `cargo test`. We specify iobase and iosize which
 # let us send messages to QEMU through IO ports.
 [package.metadata.bootimage]

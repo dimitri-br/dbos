@@ -6,7 +6,7 @@ use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1}; /
 use futures_util::stream::StreamExt; // needed for the next() function when reading scancodes from the queue
 use spin::Mutex; // Protect it with a mutex
 use x86_64::instructions::port::Port;
-use crate::{print, println, del_col};
+use crate::{print, println, del_col, serial_println};
 use lazy_static::lazy_static;
 
 /// safe one time initialization of static structs
@@ -65,6 +65,7 @@ pub struct KeyboardDriver{
 
 impl KeyboardDriver{
     pub fn new() -> Self{
+        serial_println!("Initialized the keyboard driver");
         Self{
             port: Port::new(0x60) // Read IO port 0x60, which is the PS/2 controller port
         }

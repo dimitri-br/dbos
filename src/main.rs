@@ -13,16 +13,19 @@ extern crate alloc;
 use alloc::boxed::Box;
 // String support
 use alloc::string::{String, ToString};
-
+// vec
+use alloc::vec;
 // Allows string adding and stuff
 use core::ops::Add;
 
 
 /// Use our library to get the various macros we want
-use dbos::{println, clear_screen};
+use dbos::{println, clear_screen, serial_println};
 use dbos::{memory, allocator, cpu_specs}; // Modules that control memory, the allocator and output CPU info
-use dbos::task::{Task, simple_executor::Executor}; // Use our better Executor to run our async tasks
-use dbos::driver::keyboard; // Get access to our keyboard module so we can add the print_keypresses async function to our task queue
+use dbos::task::{Task, executor::Executor}; // Use our better Executor to run our async tasks
+use dbos::driver::{DRIVER_HANDLER, keyboard}; // Get access to our keyboard module so we can add the print_keypresses async function to our task queue
+
+use tinypci::PciFullClass;
 
 use x86_64::{structures::paging::Page, VirtAddr}; // We use this to get & create pages, and assign virt addr
 
@@ -53,10 +56,29 @@ fn main(boot_info: &'static BootInfo) {
     //let memory_capacity = memory::get_physical_memory_capacity(&boot_info.memory_map);
     //println!("Free physical memory: {:?}/{:?} MiB\n", memory_capacity.0, memory_capacity.1);
 
+    {
+        let driver_handler = &DRIVER_HANDLER.lock();
+        let storage_types = vec!(PciFullClass::MassStorage_SATA, PciFullClass::MassStorage_IDE, PciFullClass::MassStorage_NVM, PciFullClass::MassStorage_Other, PciFullClass::MassStorage_IpiBus, PciFullClass::MassStorage_Floppy, PciFullClass::MassStorage_ATA);
+        
+        for pci_type in storage_types{
+            let devices = driver_handler.pci_scanner.scan_for_type(pci_type);
+            if devices.len() > 0{
+                serial_println!("{:?} devices found: {:?}", pci_type, devices);
+                println!("{:?} devices found: {:?}", pci_type, devices);
+            }else{
+                serial_println!("{:?} -> no devices found", pci_type);
+
+            }
+        }
+
+    }
+
     let mut executor = Executor::new(); // Create a new Executor
     executor.spawn(Task::new(example_task())); // Add a new task to the simple executor
     executor.spawn(Task::new(keyboard::print_keypresses())); // Add our "print_keypresses" task to our executor
     executor.run(); // Run all tasks
+
+
 
     let x = Box::new(41);
     println!("Boxed value: {:?} at (ptr: {:p} -> memory usage: {} bytes)", x, x, core::mem::size_of_val(&x));
@@ -92,7 +114,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     .expect("heap initialization failed");
 
 
-
     // We can now commence the main program
 
    
@@ -100,20 +121,20 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     // We've finished initializing
 
-    /*// map an unused page
+    // map an unused page
     let page = Page::containing_address(VirtAddr::new(0xdeadbeaf000));
     memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
     // write the string `New!` to the screen through the new mapping
     let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
-    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e)};*/
+    //unsafe { page_ptr.offset(200).write_volatile(0x_f021_f077_f065_f04e)};
 
     // as before
     #[cfg(test)]
     test_main();
 
-    main(boot_info);
+    main(boot_info); // Run our main function
 
-    dbos::hlt_loop();
+    dbos::hlt_loop(); // We're done with our main loop, just halt until an interrupt
 }
 
 /* Test async */
@@ -125,4 +146,10 @@ async fn async_number() -> u32 {
 async fn example_task() {
     let number = async_number().await;
     println!("async number: {}", number);
+    let new_number = get_value().await;
+    println!("Other Async number: {}", new_number);
+}
+
+async fn get_value() -> u32 {
+    69
 }

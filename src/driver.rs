@@ -1,8 +1,11 @@
 pub mod keyboard;
+pub mod pci;
 
 use keyboard::KeyboardDriver;
+use pci::PciScanner;
 use lazy_static::lazy_static;
 use spin::Mutex;
+use crate::serial_println;
 
 lazy_static! {
     /// Static global reference to our DriverHandler
@@ -23,13 +26,16 @@ lazy_static! {
 /// 
 pub struct DriverHandler{
     pub keyboard_driver: KeyboardDriver,
+    pub pci_scanner: PciScanner,
 }
 
 impl DriverHandler{
     /// Initialize all our drivers
     pub fn new() -> Self{
+        serial_println!("Initialized driver handler");
         Self{
             keyboard_driver: KeyboardDriver::new(),
+            pci_scanner: PciScanner::new(),
         }
     }
 }

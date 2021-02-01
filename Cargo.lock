@@ -86,6 +86,7 @@ dependencies = [
  "pic8259_simple",
  "raw-cpuid",
  "spin 0.7.1",
+ "tinypci",
  "uart_16550",
  "volatile",
  "x86_64",
@@ -210,6 +211,10 @@ checksum = "047031d6df5f5ae0092c97aa4f6bb04cfc9c081b4cd4cb9cdb38657994279a00"
 dependencies = [
  "lock_api",
 ]
+
+[[package]]
+name = "tinypci"
+version = "0.1.0"
 
 [[package]]
 name = "uart_16550"
